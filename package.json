@@ -10,7 +10,7 @@
   "description": "bot discord para mesas de rpg online",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node ."
   },
   "keywords": [
     "bot-discord"
