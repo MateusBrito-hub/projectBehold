@@ -1,5 +1,4 @@
 const { SlashCommandBuilder } = require("discord.js");
-const {ActionRowBuilder, MessageActionRow, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
 const Sheet = require('../models/sheet.js');
 const fichas = new Map();
 
