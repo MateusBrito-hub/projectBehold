@@ -83,7 +83,6 @@ const sheetSchema = new mongoose.Schema({
             sleightofHand: Boolean,
             stealth: Boolean,
             survival: Boolean,
-            passiveWisdom: Boolean,
         }
     },
 })

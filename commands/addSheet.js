@@ -14,7 +14,7 @@ module.exports = {
                 .addStringOption(option => option.setName('nome').setDescription('informe o nome do personagem').setRequired(true))
                 .addStringOption(option => option.setName('classe').setDescription('informe a sua classe/nível').setRequired(true))
                 .addStringOption(option => option.setName('antecedente').setDescription('informe o seu antecedente').setRequired(true))
-				.addStringOption(option => option.setName('raça').setDescription('informe a sua raça').setRequired(true))
+                .addStringOption(option => option.setName('raça').setDescription('informe a sua raça').setRequired(true))
                 .addStringOption(option => option.setName('alinhamento').setDescription('informe o seu alinhamento').setRequired(true))
         )
         .addSubcommand(subcommand =>
@@ -30,8 +30,9 @@ module.exports = {
         )
         .addSubcommand(subcommand =>
             subcommand
-                .setName('charskill')
+                .setName('skills')
                 .setDescription('Informe as Salvaguardas do seu personagem')
+                .addStringOption(option => option.setName('prof').setDescription('informe suas proficiencias separadas por /').setRequired(true))
         )
         .addSubcommand(subcommand =>
             subcommand
@@ -148,7 +149,7 @@ module.exports = {
                 charName: interaction.options.getString('nome'),
                 charClass: interaction.options.getString('classe'),
                 charRace: interaction.options.getString('raça'),
-                backgroundChar:interaction.options.getString('antecedente'),
+                backgroundChar: interaction.options.getString('antecedente'),
                 alignment: interaction.options.getString('alinhamento')
             };
             fichas.set(userId, { basicInfo });
@@ -158,7 +159,6 @@ module.exports = {
 
         if (subcommand === 'status') {
             const ficha = fichas.get(userId);
-            const savingThrowsPro = saveProficiency(ficha.basicInfo.charClass)
             // Verifica se a ficha existe para esse usuário
             if (!ficha) {
                 await interaction.reply('Você ainda não iniciou a criação da ficha. Por favor, inicie a criação da ficha utilizando o comando /ficha info.');
@@ -174,53 +174,74 @@ module.exports = {
                 cha: parseInt(interaction.options.getString('car')),
             };
             const savingThrows = {
-                stStr: attributeModifier(statusValue.str),
-                stDex: attributeModifier(statusValue.dex),
-                stCon: attributeModifier(statusValue.con),
-                stInt: attributeModifier(statusValue.int),
-                stWis: attributeModifier(statusValue.wis),
-                stCha: attributeModifier(statusValue.cha),
+                value: {
+                    stStr: attributeModifier(statusValue.str),
+                    stDex: attributeModifier(statusValue.dex),
+                    stCon: attributeModifier(statusValue.con),
+                    stInt: attributeModifier(statusValue.int),
+                    stWis: attributeModifier(statusValue.wis),
+                    stCha: attributeModifier(statusValue.cha),
+                },
+                prof : saveProficiency(ficha.basicInfo.charClass)
             }
 
-            for (const key in savingThrows) {
-                if (savingThrowsPro[key] === true) {
-                    savingThrows[key] = savingThrows[key] + 2;
+            for (const key in savingThrows.value) {
+                if (savingThrows.prof[key] === true) {
+                    savingThrows.value[key] = savingThrows.value[key] + 2;
                 }
             }
-            const charSkills = {
-                acrobatics: attributeModifier(statusValue.dex),
-                animalHandling: attributeModifier(statusValue.wis),
-                arcana: attributeModifier(statusValue.int),
-                athletics: attributeModifier(statusValue.str),
-                deception: attributeModifier(statusValue.cha),
-                history: attributeModifier(statusValue.int),
-                insight: attributeModifier(statusValue.wis),
-                intimidation: attributeModifier(statusValue.cha),
-                investigation: attributeModifier(statusValue.int),
-                medicine: attributeModifier(statusValue.cha),
-                nature: attributeModifier(statusValue.int),
-                perception: attributeModifier(statusValue.wis),
-                performance: attributeModifier(statusValue.cha),
-                persuasion: attributeModifier(statusValue.cha),
-                religion: attributeModifier(statusValue.int),
-                sleightofHand: attributeModifier(statusValue.dex),
-                stealth: attributeModifier(statusValue.dex),
-                survival: attributeModifier(statusValue.wis),
-                passiveWisdom: attributeModifier(statusValue.wis)
-            }
 
-            ficha.statusValue =  statusValue;
+            ficha.statusValue = statusValue;
             ficha.savingThrows = savingThrows;
-            ficha.charSkills = charSkills;
-
             fichas.set(userId, ficha)
 
             await interaction.reply('Valores dos Atributos coletados com sucesso!');
         }
 
+        if (subcommand === 'skill') {
+            const ficha = fichas.get(userId);
+
+            const charSkills = {
+                value: {
+                    acrobatics: attributeModifier(statusValue.dex),
+                    animalHandling: attributeModifier(statusValue.wis),
+                    arcana: attributeModifier(statusValue.int),
+                    athletics: attributeModifier(statusValue.str),
+                    deception: attributeModifier(statusValue.cha),
+                    history: attributeModifier(statusValue.int),
+                    insight: attributeModifier(statusValue.wis),
+                    intimidation: attributeModifier(statusValue.cha),
+                    investigation: attributeModifier(statusValue.int),
+                    medicine: attributeModifier(statusValue.cha),
+                    nature: attributeModifier(statusValue.int),
+                    perception: attributeModifier(statusValue.wis),
+                    performance: attributeModifier(statusValue.cha),
+                    persuasion: attributeModifier(statusValue.cha),
+                    religion: attributeModifier(statusValue.int),
+                    sleightofHand: attributeModifier(statusValue.dex),
+                    stealth: attributeModifier(statusValue.dex),
+                    survival: attributeModifier(statusValue.wis),
+                    passiveWisdom: attributeModifier(statusValue.wis)
+                }
+            }
+            const skill = interaction.options.getString('prof')
+            const slicer = skill.toLowerCase().split('/')
+            for (const key of slicer) {
+                charSkills.prof[key] = true
+            }
+            for (const key in charSkills.value) {
+                if (savingThrows.prof[key] === true) {
+                    savingThrows.value[key] = savingThrows.value[key] + 2;
+                }
+            }
+            ficha.charSkills = charSkills;
+            fichas.set(userId, ficha)
+
+            await interaction.reply('Valores dos Atributos coletados com sucesso!')
+        }
+
         if (subcommand === 'criar') {
             const ficha = fichas.get(userId);
-            const saveThrowsPro = saveProficiency(ficha.basicInfo.charClass)
 
             // Verifica se a ficha existe para esse usuário
             if (!ficha) {
@@ -235,7 +256,6 @@ module.exports = {
                 statusValue: ficha.statusValue,
                 savingThrows: ficha.savingThrows,
                 charSkills: ficha.charSkills,
-                savingThrowsPro: saveThrowsPro
             };
 
             console.log(sheetData)
