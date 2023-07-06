@@ -159,8 +159,8 @@ module.exports = {
 				if (char.sheet) {
 					const sheetInfoEmbedPromise = createSheetInfoEmbed(char.sheet.sheetInfo);
 					const statusValueEmbedPromise = createStatusValueEmbed(char.sheet.statusValue);
-                    const statusThrowsEmbedPromise = createStatusThrowsEmbed(char.sheet.savingThrows)
-                    const charSkillsEmbedPromise = createCharSkillsEmbed(char.sheet.charSkills)
+                    const statusThrowsEmbedPromise = createStatusThrowsEmbed(char.sheet.savingThrows.value)
+                    const charSkillsEmbedPromise = createCharSkillsEmbed(char.sheet.charSkills.value)
 					Promise.all([sheetInfoEmbedPromise, statusValueEmbedPromise, statusThrowsEmbedPromise, charSkillsEmbedPromise])
 						.then(([sheetInfoEmbed, statusValueEmbed, statusThrowsEmbed, charSkillsEmbed]) => {
 							const pages = [sheetInfoEmbed, statusValueEmbed, statusThrowsEmbed, charSkillsEmbed];

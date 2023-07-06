@@ -49,12 +49,12 @@ module.exports = {
                 case 'barbarian':
                 case 'guerreiro':
                 case 'fighter':
-                    savingThrowsPro = { stStrPro: true, stDexPro: false, stConPro: true, stIntPro: false, stWisPro: false, stChaPro: false };
+                    savingThrowsPro = { stStr: true, stDex: false, stCon: true, stInt: false, stWis: false, stCha: false };
                     break;
 
                 case 'bardo':
                 case 'bard':
-                    savingThrowsPro = { stStrPro: false, stDexPro: true, stConPro: false, stIntPro: false, stWisPro: false, stChaPro: true };
+                    savingThrowsPro = { stStr: false, stDex: true, stCon: false, stInt: false, stWis: false, stCha: true };
                     break;
 
                 case 'bruxo':
@@ -63,31 +63,31 @@ module.exports = {
                 case 'cleric':
                 case 'paladino':
                 case 'paladin':
-                    savingThrowsPro = { stStrPro: false, stDexPro: false, stConPro: false, stIntPro: false, stWisPro: true, stChaPro: true };
+                    savingThrowsPro = { stStr: false, stDex: false, stCon: false, stInt: false, stWis: true, stCha: true };
                     break;
 
                 case 'druida':
                 case 'druid':
                 case 'mago':
                 case 'wizard':
-                    savingThrowsPro = { stStrPro: false, stDexPro: false, stConPro: false, stIntPro: true, stWisPro: true, stChaPro: false };
+                    savingThrowsPro = { stStr: false, stDex: false, stCon: false, stInt: true, stWis: true, stCha: false };
                     break;
 
                 case 'feiticeiro':
                 case 'sorcerer':
-                    savingThrowsPro = { stStrPro: false, stDexPro: false, stConPro: true, stIntPro: false, stWisPro: false, stChaPro: true };
+                    savingThrowsPro = { stStr: false, stDex: false, stCon: true, stInt: false, stWis: false, stCha: true };
                     break;
 
                 case 'ladino':
                 case 'rogue':
-                    savingThrowsPro = { stStrPro: false, stDexPro: true, stConPro: false, stIntPro: true, stWisPro: false, stChaPro: false };
+                    savingThrowsPro = { stStr: false, stDex: true, stCon: false, stInt: true, stWis: false, stCha: false };
                     break;
 
                 case 'monge':
                 case 'monk':
                 case 'patrulheiro':
                 case 'ranger':
-                    savingThrowsPro = { stStrPro: true, stDexPro: true, stConPro: false, stIntPro: false, stWisPro: false, stChaPro: false };
+                    savingThrowsPro = { stStr: true, stDex: true, stCon: false, stInt: false, stWis: false, stCha: false };
                     break;
 
                 default:
@@ -182,7 +182,7 @@ module.exports = {
                     stWis: attributeModifier(statusValue.wis),
                     stCha: attributeModifier(statusValue.cha),
                 },
-                prof : saveProficiency(ficha.basicInfo.charClass)
+                prof: saveProficiency(ficha.basicInfo.charClass)
             }
 
             for (const key in savingThrows.value) {
@@ -198,8 +198,14 @@ module.exports = {
             await interaction.reply('Valores dos Atributos coletados com sucesso!');
         }
 
-        if (subcommand === 'skill') {
+        if (subcommand === 'skills') {
             const ficha = fichas.get(userId);
+            const statusValue = ficha.statusValue
+            // Verifica se a ficha existe para esse usuário
+            if (!ficha) {
+                await interaction.reply('Você ainda não iniciou a criação da ficha. Por favor, inicie a criação da ficha utilizando o comando /ficha info.');
+                return;
+            }
 
             const charSkills = {
                 value: {
@@ -226,16 +232,23 @@ module.exports = {
             }
             const skill = interaction.options.getString('prof')
             const slicer = skill.toLowerCase().split('/')
+            if (charSkills.prof === undefined) {
+                charSkills.prof = {};
+            }
             for (const key of slicer) {
                 charSkills.prof[key] = true
             }
+
+            console.log(charSkills)
+
             for (const key in charSkills.value) {
-                if (savingThrows.prof[key] === true) {
-                    savingThrows.value[key] = savingThrows.value[key] + 2;
+                if (charSkills.prof[key] === true) {
+                    charSkills.value[key] = charSkills.value[key] + 2;
                 }
             }
             ficha.charSkills = charSkills;
             fichas.set(userId, ficha)
+
 
             await interaction.reply('Valores dos Atributos coletados com sucesso!')
         }
