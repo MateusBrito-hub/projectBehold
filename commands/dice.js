@@ -31,8 +31,15 @@ module.exports = {
         const qtdDice = parseInt(dices)
         const qtdFace = parseInt(faces)
         const rollsResult = generateRolls(qtdDice, qtdFace)
+
+        if(options._hoistedOptions.length === 1){
+            await interaction.reply(`${roll}!` + ` Os dados rolados foram ${rolls} e a soma deles foi igual a ${rollsResult}!`)
+        }
+        if(options._hoistedOptions.length === 2){
+            const add = options._hoistedOptions[1].value
+            const addvalue = parseInt(add)
+            await interaction.reply(`${roll}!` + ` Os dados rolados foram [${rolls }] e a soma deles com o acrecimo de ${addvalue} foi igual a ${rollsResult + addvalue}!`)
+        }
         
-        await interaction.reply(`${roll}!` + ` Os dados rolados foram ${rolls} e a soma deles foi igual a ${rollsResult}`)
-        console.log(filter('dado')[0].value)
     }
 }

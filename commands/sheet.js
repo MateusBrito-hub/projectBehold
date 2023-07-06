@@ -5,44 +5,84 @@ const fichas = new Map();
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName("ficha")
-        .addStringOption(option => option.setName('char').setDescription('Informe o Personagem desejado'))
-        .setDescription("Comando para criar ficha")
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName('info')
-                .setDescription('Adicione as informações básicas da ficha')
-                .addStringOption(option => option.setName('personagem').setDescription('informe a url da Imagem').setRequired(true))
-                .addStringOption(option => option.setName('nome').setDescription('informe o nome do personagem').setRequired(true))
-                .addStringOption(option => option.setName('classe').setDescription('informe a sua classe/nível').setRequired(true))
-                .addStringOption(option => option.setName('antecedente').setDescription('informe o seu antecedente').setRequired(true))
-                .addStringOption(option => option.setName('raça').setDescription('informe a sua raça').setRequired(true))
-                .addStringOption(option => option.setName('alinhamento').setDescription('informe o seu alinhamento').setRequired(true))
-        )
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName('status')
-                .setDescription('Informe os Status do seu personagem')
-                .addStringOption(option => option.setName('for').setDescription('informe o valor de força').setRequired(true))
-                .addStringOption(option => option.setName('des').setDescription('informe o valor de destreza').setRequired(true))
-                .addStringOption(option => option.setName('con').setDescription('informe o valor de constituição').setRequired(true))
-                .addStringOption(option => option.setName('int').setDescription('informe o valor de inteligência').setRequired(true))
-                .addStringOption(option => option.setName('sab').setDescription('informe o valor de sabedoria').setRequired(true))
-                .addStringOption(option => option.setName('car').setDescription('informe o valor de carisma').setRequired(true))
-        )
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName('skills')
-                .setDescription('Informe as Salvaguardas do seu personagem')
-                .addStringOption(option => option.setName('prof').setDescription('informe suas proficiencias separadas por /').setRequired(true))
-        )
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName('criar')
-                .setDescription('Finaliza a criação de ficha')
-        ),
+        .setName('ficha')
+        .setDescription('Comando para criar ficha')
+        .addSubcommand(subcommand => subcommand
+            .setName('info')
+            .setDescription('Adicione as informações básicas da ficha')
+            .addStringOption(option => option
+                .setName('personagem')
+                .setDescription('informe a url da Imagem')
+                .setRequired(true))
+            .addStringOption(option => option
+                .setName('nome')
+                .setDescription('informe o nome do personagem')
+                .setRequired(true))
+            .addStringOption(option => option
+                .setName('classe')
+                .setDescription('informe a sua classe/nível')
+                .setRequired(true))
+            .addStringOption(option => option
+                .setName('antecedente')
+                .setDescription('informe o seu antecedente')
+                .setRequired(true))
+            .addStringOption(option => option
+                .setName('raça')
+                .setDescription('informe a sua raça')
+                .setRequired(true))
+            .addStringOption(option => option
+                .setName('alinhamento')
+                .setDescription('informe o seu alinhamento')
+                .setRequired(true)))
+        .addSubcommand(subcommand => subcommand
+            .setName('status')
+            .setDescription('Informe os Status do seu personagem')
+            .addStringOption(option => option
+                .setName('for')
+                .setDescription('informe o valor de força')
+                .setRequired(true))
+            .addStringOption(option => option
+                .setName('des')
+                .setDescription('informe o valor de destreza')
+                .setRequired(true))
+            .addStringOption(option => option
+                .setName('con')
+                .setDescription('informe o valor de constituição')
+                .setRequired(true))
+            .addStringOption(option => option
+                .setName('int')
+                .setDescription('informe o valor de inteligência')
+                .setRequired(true))
+            .addStringOption(option => option
+                .setName('sab')
+                .setDescription('informe o valor de sabedoria')
+                .setRequired(true))
+            .addStringOption(option => option
+                .setName('car')
+                .setDescription('informe o valor de carisma')
+                .setRequired(true)))
+        .addSubcommand(subcommand => subcommand
+            .setName('skills')
+            .setDescription('Informe as Salvaguardas do seu personagem')
+            .addStringOption(option => option
+                .setName('prof')
+                .setDescription('informe suas proficiencias separadas por /')
+                .setRequired(true)))
+        .addSubcommand(subcommand => subcommand
+            .setName('criar')
+            .setDescription('Finaliza a criação de ficha'))
+        .addSubcommand(subcommand => subcommand
+            .setName('personagem')
+            .setDescription('Informe o nome do Personagem desejado')
+            .addStringOption(option => option
+                .setName('char')
+                .setDescription('Informe o nome da ficha desejada')
+                .setRequired(true))),
 
     async execute(interaction) {
+
+        // funções internas para funcionamento do codigo:
+        
         function saveProficiency(charClass) {
             let savingThrowsPro = {};
 
@@ -125,9 +165,109 @@ module.exports = {
                 return 10;
             }
         }
-        const command = interaction.options.getCommand()
-        const subcommand = interaction.options.getSubcommand();
+        async function findSheet(key, value) {
+            const filter = {};
+            filter[key] = value;
+            return Sheet.findOne(filter)
+                .then((document) => {
+                    if (document) {
+                        return document;
+                    } else {
+                        console.log('Documento não encontrado');
+                        return null;
+                    }
+                })
+                .catch((err) => {
+                    console.error('Erro:', err);
+                    return null;
+                });
+        }
+        async function createSheetInfoEmbed(sheetInfo) {
+            const charImageUrl = char.sheet.charImg
+            const embed1 = new EmbedBuilder()
+                .setColor('#00FF00')
+                .setImage(charImageUrl)
+                .setTitle('Ficha de Personagem')
+                .addFields(
+                    { name: 'Nome:', value: `${sheetInfo.charName}`, inline: true },
+                    { name: 'Classe:', value: `${sheetInfo.charClass}`, inline: true },
+                    { name: 'Raça:', value: `${sheetInfo.charRace}`, inline: true },
+                    { name: 'Antecendente:', value: `${sheetInfo.backgroundChar}`, inline: true },
+                    { name: 'Alinhamento:', value: `${sheetInfo.alignment}`, inline: true },
+                )
+                .setFooter({ text: 'Página 1/4' });
+            return embed1;
+        }
+        async function createStatusValueEmbed(statusValue) {
+            const charImageUrl = char.sheet.charImg
+            const embed2 = new EmbedBuilder()
+                .setColor('#00FF00')
+                .setTitle('Ficha de Personagem')
+                .setImage(charImageUrl)
+                .addFields(
+                    { name: 'For:', value: `${statusValue.str} (${attributeModifier(statusValue.str)})`, inline: true },
+                    { name: 'Des:', value: `${statusValue.dex} (${attributeModifier(statusValue.dex)})`, inline: true },
+                    { name: 'Con:', value: `${statusValue.con} (${attributeModifier(statusValue.con)})`, inline: true },
+                    { name: 'Int:', value: `${statusValue.int} (${attributeModifier(statusValue.int)})`, inline: true },
+                    { name: 'Sab:', value: `${statusValue.wis} (${attributeModifier(statusValue.wis)})`, inline: true },
+                    { name: 'Car:', value: `${statusValue.cha} (${attributeModifier(statusValue.cha)})`, inline: true },
+                )
+                .setFooter({ text: 'Página 2/4' });
+            return embed2;
+        }
+        async function createStatusThrowsEmbed(savingThrows) {
+            const charImageUrl = char.sheet.charImg
+            const embed3 = new EmbedBuilder()
+                .setColor('#00FF00')
+                .setTitle('Saving Throws')
+                .setImage(charImageUrl)
+                .addFields(
+                    { name: 'For:', value: `${savingThrows.stStr}`, inline: true },
+                    { name: 'Des:', value: `${savingThrows.stDex}`, inline: true },
+                    { name: 'Con:', value: `${savingThrows.stCon}`, inline: true },
+                    { name: 'Int:', value: `${savingThrows.stInt}`, inline: true },
+                    { name: 'Sab:', value: `${savingThrows.stWis}`, inline: true },
+                    { name: 'Car:', value: `${savingThrows.stCha}`, inline: true },
+                )
+                .setFooter({ text: 'Página 3/4' });
+            return embed3;
+        }
+        async function createCharSkillsEmbed(charSkills) {
+            //const charImageUrl = char.sheet.charImg
+            const embed4 = new EmbedBuilder()
+                .setColor('#00FF00')
+                .setTitle('Skills')
+                .addFields(
+                    { name: '\u200B', value: '\u200B' },
+                    { name: 'Acrobacia:', value: `${charSkills.acrobatics}`, inline: true },
+                    { name: 'Adestra Animais:', value: `${charSkills.animalHandling}`, inline: true },
+                    { name: 'Arcanismo:', value: `${charSkills.arcana}`, inline: true },
+                    { name: 'Atletismo:', value: `${charSkills.athletics}`, inline: true },
+                    { name: 'Atuação:', value: `${charSkills.performance}`, inline: true },
+                    { name: 'Enganação:', value: `${charSkills.deception}`, inline: true },
+                    { name: 'Furtividade:', value: `${charSkills.stealth}`, inline: true },
+                    { name: 'Historia:', value: `${charSkills.history}`, inline: true },
+                    { name: 'Intuição:', value: `${charSkills.insight}`, inline: true },
+                    { name: 'Intimidação:', value: `${charSkills.intimidation}`, inline: true },
+                    { name: 'Investigação:', value: `${charSkills.investigation}`, inline: true },
+                    { name: 'Medicina:', value: `${charSkills.medicine}`, inline: true },
+                    { name: 'Natureza:', value: `${charSkills.nature}`, inline: true },
+                    { name: 'Percepção:', value: `${charSkills.perception}`, inline: true },
+                    { name: 'Persuasão:', value: `${charSkills.persuasion}`, inline: true },
+                    { name: 'Prestidigitação:', value: `${charSkills.sleightofHand}`, inline: true },
+                    { name: 'Religião:', value: `${charSkills.religion}`, inline: true },
+                    { name: 'Sobrevivencia:', value: `${charSkills.survival}`, inline: true },
+                    { name: '\u200B', value: '\u200B' },
+                    { name: 'Percepção Passiva:', value: `${10 + charSkills.passiveWisdom}` },
+                )
+                .setFooter({ text: 'Página 4/4' });
+            return embed4;
+        }
+        // Tratamento de subcommandos
+
+        const subcommand = interaction.options.getSubcommand(); // Obtém a informação do Subcommando utilizado
         const userId = interaction.user.id; // Obtém o ID do usuário que está fazendo a requisição
+        // Subcommand para iniciar ficha e coletar dados de informação do personagem
         if (subcommand === 'info') {
             const ficha = fichas.get(userId);
             // Verifica se a ficha já existe para esse usuário
@@ -147,6 +287,7 @@ module.exports = {
             fichas.set(userId, { basicInfo });
             await interaction.reply('Informações básicas coletadas com sucesso!');
         }
+        // Subcomand para coleta de informação de Status do personagem e geração de Saves do personagem
         if (subcommand === 'status') {
             const ficha = fichas.get(userId);
             // Verifica se a ficha existe para esse usuário
@@ -183,6 +324,7 @@ module.exports = {
             fichas.set(userId, ficha)
             await interaction.reply('Valores dos Atributos coletados com sucesso!');
         }
+        // Subcommand para coleta de proficiencia em Skill do personagem
         if (subcommand === 'skills') {
             const ficha = fichas.get(userId);
             const statusValue = ficha.statusValue
@@ -231,6 +373,7 @@ module.exports = {
             fichas.set(userId, ficha)
             await interaction.reply('Valores dos Atributos coletados com sucesso!')
         }
+        // Subcommand para finalizar ficha e salvar no banco
         if (subcommand === 'criar') {
             const ficha = fichas.get(userId);
             // Verifica se a ficha existe para esse usuário
@@ -251,107 +394,9 @@ module.exports = {
             fichas.delete(userId); // Remove a ficha da estrutura de dados após a criação
             await interaction.reply('Ficha criada com sucesso!');
         }
-        if (command === 'ficha') {
-            console.log(interaction.options.getString('char'))
-            function findSheet(key, value) {
-                const filter = {};
-                filter[key] = value;
-                return Sheet.findOne(filter)
-                    .then((document) => {
-                        if (document) {
-                            return document;
-                        } else {
-                            console.log('Documento não encontrado');
-                            return null;
-                        }
-                    })
-                    .catch((err) => {
-                        console.error('Erro:', err);
-                        return null;
-                    });
-            }
-            async function createSheetInfoEmbed(sheetInfo) {
-                const charImageUrl = char.sheet.charImg
-                const embed1 = new EmbedBuilder()
-                    .setColor('#00FF00')
-                    .setImage(charImageUrl)
-                    .setTitle('Ficha de Personagem')
-                    .addFields(
-                        { name: 'Nome:', value: `${sheetInfo.charName}`, inline: true },
-                        { name: 'Classe:', value: `${sheetInfo.charClass}`, inline: true },
-                        { name: 'Raça:', value: `${sheetInfo.charRace}`, inline: true },
-                        { name: 'Antecendente:', value: `${sheetInfo.backgroundChar}`, inline: true },
-                        { name: 'Alinhamento:', value: `${sheetInfo.alignment}`, inline: true },
-                    )
-                    .setFooter({ text: 'Página 1/4' });
-                return embed1;
-            }
-            async function createStatusValueEmbed(statusValue) {
-                const charImageUrl = char.sheet.charImg
-                const embed2 = new EmbedBuilder()
-                    .setColor('#00FF00')
-                    .setTitle('Ficha de Personagem')
-                    .setImage(charImageUrl)
-                    .addFields(
-                        { name: 'For:', value: `${statusValue.str} (${attributeModifier(statusValue.str)})`, inline: true },
-                        { name: 'Des:', value: `${statusValue.dex} (${attributeModifier(statusValue.dex)})`, inline: true },
-                        { name: 'Con:', value: `${statusValue.con} (${attributeModifier(statusValue.con)})`, inline: true },
-                        { name: 'Int:', value: `${statusValue.int} (${attributeModifier(statusValue.int)})`, inline: true },
-                        { name: 'Sab:', value: `${statusValue.wis} (${attributeModifier(statusValue.wis)})`, inline: true },
-                        { name: 'Car:', value: `${statusValue.cha} (${attributeModifier(statusValue.cha)})`, inline: true },
-                    )
-                    .setFooter({ text: 'Página 2/4' });
-                return embed2;
-            }
-            async function createStatusThrowsEmbed(savingThrows) {
-                const charImageUrl = char.sheet.charImg
-                const embed3 = new EmbedBuilder()
-                    .setColor('#00FF00')
-                    .setTitle('Saving Throws')
-                    .setImage(charImageUrl)
-                    .addFields(
-                        { name: 'For:', value: `${savingThrows.stStr}`, inline: true },
-                        { name: 'Des:', value: `${savingThrows.stDex}`, inline: true },
-                        { name: 'Con:', value: `${savingThrows.stCon}`, inline: true },
-                        { name: 'Int:', value: `${savingThrows.stInt}`, inline: true },
-                        { name: 'Sab:', value: `${savingThrows.stWis}`, inline: true },
-                        { name: 'Car:', value: `${savingThrows.stCha}`, inline: true },
-                    )
-                    .setFooter({ text: 'Página 3/4' });
-                return embed3;
-            }
-            async function createCharSkillsEmbed(charSkills) {
-                //const charImageUrl = char.sheet.charImg
-                const embed4 = new EmbedBuilder()
-                    .setColor('#00FF00')
-                    .setTitle('Skills')
-                    .addFields(
-                        { name: '\u200B', value: '\u200B' },
-                        { name: 'Acrobacia:', value: `${charSkills.acrobatics}`, inline: true },
-                        { name: 'Adestra Animais:', value: `${charSkills.animalHandling}`, inline: true },
-                        { name: 'Arcanismo:', value: `${charSkills.arcana}`, inline: true },
-                        { name: 'Atletismo:', value: `${charSkills.athletics}`, inline: true },
-                        { name: 'Atuação:', value: `${charSkills.performance}`, inline: true },
-                        { name: 'Enganação:', value: `${charSkills.deception}`, inline: true },
-                        { name: 'Furtividade:', value: `${charSkills.stealth}`, inline: true },
-                        { name: 'Historia:', value: `${charSkills.history}`, inline: true },
-                        { name: 'Intuição:', value: `${charSkills.insight}`, inline: true },
-                        { name: 'Intimidação:', value: `${charSkills.intimidation}`, inline: true },
-                        { name: 'Investigação:', value: `${charSkills.investigation}`, inline: true },
-                        { name: 'Medicina:', value: `${charSkills.medicine}`, inline: true },
-                        { name: 'Natureza:', value: `${charSkills.nature}`, inline: true },
-                        { name: 'Percepção:', value: `${charSkills.perception}`, inline: true },
-                        { name: 'Persuasão:', value: `${charSkills.persuasion}`, inline: true },
-                        { name: 'Prestidigitação:', value: `${charSkills.sleightofHand}`, inline: true },
-                        { name: 'Religião:', value: `${charSkills.religion}`, inline: true },
-                        { name: 'Sobrevivencia:', value: `${charSkills.survival}`, inline: true },
-                        { name: '\u200B', value: '\u200B' },
-                        { name: 'Percepção Passiva:', value: `${10 + charSkills.passiveWisdom}` },
-                    )
-                    .setFooter({ text: 'Página 4/4' });
-                return embed4;
-            }
-            const personagem = interaction.options.getString('personagem');
+        // subcommand para consulta e apresentação da ficha selecionada
+        if (subcommand === 'personagem') {
+            const personagem = interaction.options.getString('char');
             findSheet('sheetInfo.charName', personagem)
                 .then((findDocument) => {
                     char.sheet = findDocument;
