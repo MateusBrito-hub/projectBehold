@@ -6,8 +6,8 @@ const fichas = new Map();
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("ficha")
-        .setDescription("Comando para criar ficha")
         .addStringOption(option => option.setName('char').setDescription('Informe o Personagem desejado'))
+        .setDescription("Comando para criar ficha")
         .addSubcommand(subcommand =>
             subcommand
                 .setName('info')
@@ -125,9 +125,133 @@ module.exports = {
                 return 10;
             }
         }
+        const command = interaction.options.getCommand()
         const subcommand = interaction.options.getSubcommand();
         const userId = interaction.user.id; // Obtém o ID do usuário que está fazendo a requisição
-        if (!subcommand) {
+        if (subcommand === 'info') {
+            const ficha = fichas.get(userId);
+            // Verifica se a ficha já existe para esse usuário
+            if (ficha) {
+                await interaction.reply('Você já iniciou a criação da ficha. Por favor, conclua ou cancele a ficha em andamento antes de iniciar uma nova.');
+                return;
+            }
+            const basicInfo = {
+                // Obtém as informações básicas da requisição
+                charImg: interaction.options.getString('personagem'),
+                charName: interaction.options.getString('nome'),
+                charClass: interaction.options.getString('classe'),
+                charRace: interaction.options.getString('raça'),
+                backgroundChar: interaction.options.getString('antecedente'),
+                alignment: interaction.options.getString('alinhamento')
+            };
+            fichas.set(userId, { basicInfo });
+            await interaction.reply('Informações básicas coletadas com sucesso!');
+        }
+        if (subcommand === 'status') {
+            const ficha = fichas.get(userId);
+            // Verifica se a ficha existe para esse usuário
+            if (!ficha) {
+                await interaction.reply('Você ainda não iniciou a criação da ficha. Por favor, inicie a criação da ficha utilizando o comando /ficha info.');
+                return;
+            }
+            const statusValue = {
+                str: parseInt(interaction.options.getString('for')),
+                dex: parseInt(interaction.options.getString('des')),
+                con: parseInt(interaction.options.getString('con')),
+                int: parseInt(interaction.options.getString('int')),
+                wis: parseInt(interaction.options.getString('sab')),
+                cha: parseInt(interaction.options.getString('car')),
+            };
+            const savingThrows = {
+                value: {
+                    stStr: attributeModifier(statusValue.str),
+                    stDex: attributeModifier(statusValue.dex),
+                    stCon: attributeModifier(statusValue.con),
+                    stInt: attributeModifier(statusValue.int),
+                    stWis: attributeModifier(statusValue.wis),
+                    stCha: attributeModifier(statusValue.cha),
+                },
+                prof: saveProficiency(ficha.basicInfo.charClass)
+            }
+            for (const key in savingThrows.value) {
+                if (savingThrows.prof[key] === true) {
+                    savingThrows.value[key] = savingThrows.value[key] + 2;
+                }
+            }
+            ficha.statusValue = statusValue;
+            ficha.savingThrows = savingThrows;
+            fichas.set(userId, ficha)
+            await interaction.reply('Valores dos Atributos coletados com sucesso!');
+        }
+        if (subcommand === 'skills') {
+            const ficha = fichas.get(userId);
+            const statusValue = ficha.statusValue
+            // Verifica se a ficha existe para esse usuário
+            if (!ficha) {
+                await interaction.reply('Você ainda não iniciou a criação da ficha. Por favor, inicie a criação da ficha utilizando o comando /ficha info.');
+                return;
+            }
+            const charSkills = {
+                value: {
+                    acrobatics: attributeModifier(statusValue.dex),
+                    animalHandling: attributeModifier(statusValue.wis),
+                    arcana: attributeModifier(statusValue.int),
+                    athletics: attributeModifier(statusValue.str),
+                    deception: attributeModifier(statusValue.cha),
+                    history: attributeModifier(statusValue.int),
+                    insight: attributeModifier(statusValue.wis),
+                    intimidation: attributeModifier(statusValue.cha),
+                    investigation: attributeModifier(statusValue.int),
+                    medicine: attributeModifier(statusValue.cha),
+                    nature: attributeModifier(statusValue.int),
+                    perception: attributeModifier(statusValue.wis),
+                    performance: attributeModifier(statusValue.cha),
+                    persuasion: attributeModifier(statusValue.cha),
+                    religion: attributeModifier(statusValue.int),
+                    sleightofHand: attributeModifier(statusValue.dex),
+                    stealth: attributeModifier(statusValue.dex),
+                    survival: attributeModifier(statusValue.wis),
+                    passiveWisdom: attributeModifier(statusValue.wis)
+                }
+            }
+            const skill = interaction.options.getString('prof')
+            const slicer = skill.toLowerCase().split('/')
+            if (charSkills.prof === undefined) {
+                charSkills.prof = {};
+            }
+            for (const key of slicer) {
+                charSkills.prof[key] = true
+            }
+            for (const key in charSkills.value) {
+                if (charSkills.prof[key] === true) {
+                    charSkills.value[key] = charSkills.value[key] + 2;
+                }
+            }
+            ficha.charSkills = charSkills;
+            fichas.set(userId, ficha)
+            await interaction.reply('Valores dos Atributos coletados com sucesso!')
+        }
+        if (subcommand === 'criar') {
+            const ficha = fichas.get(userId);
+            // Verifica se a ficha existe para esse usuário
+            if (!ficha) {
+                await interaction.reply('Você ainda não iniciou a criação da ficha. Por favor, inicie a criação da ficha utilizando o comando /ficha info.');
+                return;
+            }
+            const sheetData = {
+                playerName: interaction.user.username,
+                charImg: ficha.basicInfo.charImg,
+                sheetInfo: ficha.basicInfo,
+                statusValue: ficha.statusValue,
+                savingThrows: ficha.savingThrows,
+                charSkills: ficha.charSkills,
+            };
+            const newSheet = new Sheet(sheetData);
+            await newSheet.save();
+            fichas.delete(userId); // Remove a ficha da estrutura de dados após a criação
+            await interaction.reply('Ficha criada com sucesso!');
+        }
+        if (command === 'ficha') {
             console.log(interaction.options.getString('char'))
             function findSheet(key, value) {
                 const filter = {};
@@ -285,129 +409,6 @@ module.exports = {
                     console.error('Erro ao buscar o personagem:', error);
                     interaction.reply('Ocorreu um erro ao buscar o personagem.');
                 });
-        }
-        if (subcommand === 'info') {
-            const ficha = fichas.get(userId);
-            // Verifica se a ficha já existe para esse usuário
-            if (ficha) {
-                await interaction.reply('Você já iniciou a criação da ficha. Por favor, conclua ou cancele a ficha em andamento antes de iniciar uma nova.');
-                return;
-            }
-            const basicInfo = {
-                // Obtém as informações básicas da requisição
-                charImg: interaction.options.getString('personagem'),
-                charName: interaction.options.getString('nome'),
-                charClass: interaction.options.getString('classe'),
-                charRace: interaction.options.getString('raça'),
-                backgroundChar: interaction.options.getString('antecedente'),
-                alignment: interaction.options.getString('alinhamento')
-            };
-            fichas.set(userId, { basicInfo });
-            await interaction.reply('Informações básicas coletadas com sucesso!');
-        }
-        if (subcommand === 'status') {
-            const ficha = fichas.get(userId);
-            // Verifica se a ficha existe para esse usuário
-            if (!ficha) {
-                await interaction.reply('Você ainda não iniciou a criação da ficha. Por favor, inicie a criação da ficha utilizando o comando /ficha info.');
-                return;
-            }
-            const statusValue = {
-                str: parseInt(interaction.options.getString('for')),
-                dex: parseInt(interaction.options.getString('des')),
-                con: parseInt(interaction.options.getString('con')),
-                int: parseInt(interaction.options.getString('int')),
-                wis: parseInt(interaction.options.getString('sab')),
-                cha: parseInt(interaction.options.getString('car')),
-            };
-            const savingThrows = {
-                value: {
-                    stStr: attributeModifier(statusValue.str),
-                    stDex: attributeModifier(statusValue.dex),
-                    stCon: attributeModifier(statusValue.con),
-                    stInt: attributeModifier(statusValue.int),
-                    stWis: attributeModifier(statusValue.wis),
-                    stCha: attributeModifier(statusValue.cha),
-                },
-                prof: saveProficiency(ficha.basicInfo.charClass)
-            }
-            for (const key in savingThrows.value) {
-                if (savingThrows.prof[key] === true) {
-                    savingThrows.value[key] = savingThrows.value[key] + 2;
-                }
-            }
-            ficha.statusValue = statusValue;
-            ficha.savingThrows = savingThrows;
-            fichas.set(userId, ficha)
-            await interaction.reply('Valores dos Atributos coletados com sucesso!');
-        }
-        if (subcommand === 'skills') {
-            const ficha = fichas.get(userId);
-            const statusValue = ficha.statusValue
-            // Verifica se a ficha existe para esse usuário
-            if (!ficha) {
-                await interaction.reply('Você ainda não iniciou a criação da ficha. Por favor, inicie a criação da ficha utilizando o comando /ficha info.');
-                return;
-            }
-            const charSkills = {
-                value: {
-                    acrobatics: attributeModifier(statusValue.dex),
-                    animalHandling: attributeModifier(statusValue.wis),
-                    arcana: attributeModifier(statusValue.int),
-                    athletics: attributeModifier(statusValue.str),
-                    deception: attributeModifier(statusValue.cha),
-                    history: attributeModifier(statusValue.int),
-                    insight: attributeModifier(statusValue.wis),
-                    intimidation: attributeModifier(statusValue.cha),
-                    investigation: attributeModifier(statusValue.int),
-                    medicine: attributeModifier(statusValue.cha),
-                    nature: attributeModifier(statusValue.int),
-                    perception: attributeModifier(statusValue.wis),
-                    performance: attributeModifier(statusValue.cha),
-                    persuasion: attributeModifier(statusValue.cha),
-                    religion: attributeModifier(statusValue.int),
-                    sleightofHand: attributeModifier(statusValue.dex),
-                    stealth: attributeModifier(statusValue.dex),
-                    survival: attributeModifier(statusValue.wis),
-                    passiveWisdom: attributeModifier(statusValue.wis)
-                }
-            }
-            const skill = interaction.options.getString('prof')
-            const slicer = skill.toLowerCase().split('/')
-            if (charSkills.prof === undefined) {
-                charSkills.prof = {};
-            }
-            for (const key of slicer) {
-                charSkills.prof[key] = true
-            }
-            for (const key in charSkills.value) {
-                if (charSkills.prof[key] === true) {
-                    charSkills.value[key] = charSkills.value[key] + 2;
-                }
-            }
-            ficha.charSkills = charSkills;
-            fichas.set(userId, ficha)
-            await interaction.reply('Valores dos Atributos coletados com sucesso!')
-        }
-        if (subcommand === 'criar') {
-            const ficha = fichas.get(userId);
-            // Verifica se a ficha existe para esse usuário
-            if (!ficha) {
-                await interaction.reply('Você ainda não iniciou a criação da ficha. Por favor, inicie a criação da ficha utilizando o comando /ficha info.');
-                return;
-            }
-            const sheetData = {
-                playerName: interaction.user.username,
-                charImg: ficha.basicInfo.charImg,
-                sheetInfo: ficha.basicInfo,
-                statusValue: ficha.statusValue,
-                savingThrows: ficha.savingThrows,
-                charSkills: ficha.charSkills,
-            };
-            const newSheet = new Sheet(sheetData);
-            await newSheet.save();
-            fichas.delete(userId); // Remove a ficha da estrutura de dados após a criação
-            await interaction.reply('Ficha criada com sucesso!');
         }
     },
 };
