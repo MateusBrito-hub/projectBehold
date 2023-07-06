@@ -4,7 +4,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("dice")
         .setDescription("Rola o dado")
-        .addStringOption(option => option.setName('dado').setDescription('informe a rolagem'))
+        .addStringOption(option => option.setName('dado').setDescription('informe a rolagem').setRequired(true))
         .addStringOption(option => option.setName('adicional').setDescription('informe adicional')),
 
         

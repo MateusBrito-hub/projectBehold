@@ -6,7 +6,8 @@ const abilitySchema = new mongoose.Schema({
     ability: [{
         level: Number,
         name: String,
-        description: String
+        description: String,
+        roll: String
     }]
 })
 

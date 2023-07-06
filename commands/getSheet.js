@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { EmbedBuilder, ActionRowBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder} = require('discord.js');
 const {ButtonBuilder, ButtonStyle} = require('discord.js')
 const Sheet = require('../models/sheet.js');
 const char = {};
@@ -8,7 +8,7 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName("personagem")
 		.setDescription("Apresenta a ficha do personagem selecionado!")
-		.addStringOption(option => option.setName('personagem').setDescription('Informe o Personagem desejado')),
+		.addStringOption(option => option.setName('personagem').setDescription('Informe o Personagem desejado').setRequired(true)),
 
 	async execute(interaction) {
 		function findSheet(key, value) {
